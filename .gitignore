@@ -19,3 +19,8 @@ Thumbs.db
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# Local-only project docs — not read by ArgoCD/kustomize, kept out of the public repo
+/CLAUDE.md
+/documents/
+/docs/

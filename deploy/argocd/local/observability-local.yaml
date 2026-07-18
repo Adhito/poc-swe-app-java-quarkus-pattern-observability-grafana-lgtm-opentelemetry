@@ -13,7 +13,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/Adhito909/poc-swe-app-java-quarkus-pattern-observability-grafana-lgtm-opentelemetry.git
+    repoURL: https://github.com/Adhito/poc-swe-app-java-quarkus-pattern-observability-grafana-lgtm-opentelemetry.git
     targetRevision: main
     path: deploy/overlays/local
   destination:
