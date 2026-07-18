@@ -20,6 +20,14 @@ spec:
     helm:
       valuesObject:
         controller:
+          # No admission webhook: removes the chart's certgen hook Jobs, which
+          # repeatedly wedged ArgoCD 2.14 ("Pending deletion" on an already-
+          # deleted hook Job, surviving a controller restart). The webhook only
+          # validates Ingress specs at admission — dispensable for this POC,
+          # and disabling makes the chart hook-free (plain resources, nothing
+          # for ArgoCD to choreograph). See documents/CLAUDE-CODE-FIXING-LOG.md.
+          admissionWebhooks:
+            enabled: false
           ingressClassResource:
             default: true
           service:
