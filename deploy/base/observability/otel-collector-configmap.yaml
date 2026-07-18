@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: observability
+data:
+  config.yaml: |
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+            # CORS is required for the Phase 3 browser SDK (PRD 6.1, risk table).
+            # EKS overlays patch in their own origins (D4: public hostname + localhost tunnel origins).
+            cors:
+              allowed_origins:
+                - http://app.192.168.56.240.nip.io
+              allowed_headers:
+                - "*"
+
+    processors:
+      batch: {}
+
+    exporters:
+      # LGTM all-in-one accepts OTLP for all three signals (traces->Tempo, logs->Loki, metrics->Prometheus)
+      otlphttp/lgtm:
+        endpoint: http://lgtm:4318
+
+    service:
+      extensions: [health_check]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/lgtm]
+        metrics:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/lgtm]
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [otlphttp/lgtm]

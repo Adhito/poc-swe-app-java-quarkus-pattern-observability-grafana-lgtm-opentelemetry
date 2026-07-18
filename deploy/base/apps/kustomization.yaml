@@ -1,0 +1,6 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+# order-service, stock-service (Phase 1), frontend (Phase 3),
+# notification-service (Phase 4) + their ingresses land here
+resources:
+  - namespace.yaml

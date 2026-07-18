@@ -1,0 +1,9 @@
+# Pool per D10(b): clear of cluster nodes (.10-.12) and the Dev VM (.20)
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: local-pool
+  namespace: metallb-system
+spec:
+  addresses:
+    - 192.168.56.240-192.168.56.250

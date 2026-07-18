@@ -1,0 +1,5 @@
+# Repo is edited on Windows but mounted into a Linux Dev VM (PRD 6.4) —
+# keep everything LF so scripts/units/manifests behave on the VM.
+* text=auto eol=lf
+*.png binary
+*.jpg binary

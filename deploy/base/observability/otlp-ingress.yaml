@@ -1,0 +1,22 @@
+# Exposes the collector's OTLP/HTTP receiver (4318) externally — required for
+# browser span export in Phase 3 (PRD 4.5 / D3). CORS is handled by the
+# collector itself (see otel-collector-configmap.yaml), not by nginx.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otlp
+  namespace: observability
+spec:
+  ingressClassName: nginx
+  rules:
+    # host is environment-specific — patched in each overlay (PRD section 8)
+    - host: otlp.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: otel-collector
+                port:
+                  name: otlp-http

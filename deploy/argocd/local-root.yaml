@@ -1,0 +1,23 @@
+# App-of-apps for the `local` overlay (D8). This is the ONE manifest applied
+# imperatively to bootstrap:  kubectl apply -f deploy/argocd/local-root.yaml
+# Everything else reconciles from Git.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-root
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/Adhito909/poc-swe-app-java-quarkus-pattern-observability-grafana-lgtm-opentelemetry.git
+    targetRevision: main
+    path: deploy/argocd/local
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

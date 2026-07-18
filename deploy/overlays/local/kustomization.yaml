@@ -1,0 +1,16 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base/observability
+  - ../../base/platform
+  - ../../base/apps
+  # MetalLB CRs live here (not in base) — MetalLB only exists in the local
+  # environment; EKS gets LoadBalancers from AWS (D3)
+  - metallb-ipaddresspool.yaml
+  - metallb-l2advertisement.yaml
+
+# hostnames are the only thing overlays change on ingresses (PRD section 8)
+patches:
+  - path: patch-grafana-ingress.yaml
+  - path: patch-otlp-ingress.yaml

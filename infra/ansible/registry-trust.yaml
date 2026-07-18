@@ -1,0 +1,44 @@
+# Makes containerd on every cluster node trust the Dev VM registry over
+# plain HTTP (PRD D9). Run from the Dev VM:
+#   cp inventory.example.ini inventory.ini
+#   ansible-playbook -i inventory.ini registry-trust.yaml
+---
+- name: Trust the Dev VM registry in containerd
+  hosts: k8s_nodes
+  become: true
+  vars:
+    registry_host: "192.168.56.20:5000"
+    certs_d: /etc/containerd/certs.d
+
+  tasks:
+    - name: Ensure certs.d directory for the registry exists
+      ansible.builtin.file:
+        path: "{{ certs_d }}/{{ registry_host }}"
+        state: directory
+        mode: "0755"
+
+    - name: Drop hosts.toml trust config
+      ansible.builtin.template:
+        src: templates/hosts.toml.j2
+        dest: "{{ certs_d }}/{{ registry_host }}/hosts.toml"
+        mode: "0644"
+      notify: Restart containerd
+
+    # `containerd config default` emits config_path = "" — point it at certs.d.
+    # Idempotent: no change if it's already set.
+    - name: Point containerd registry config_path at certs.d
+      ansible.builtin.replace:
+        path: /etc/containerd/config.toml
+        regexp: '^(\s*config_path\s*=\s*)""'
+        replace: '\1"{{ certs_d }}"'
+      notify: Restart containerd
+
+    - name: Verify config_path is set
+      ansible.builtin.command: grep -F 'config_path = "{{ certs_d }}"' /etc/containerd/config.toml
+      changed_when: false
+
+  handlers:
+    - name: Restart containerd
+      ansible.builtin.systemd:
+        name: containerd
+        state: restarted
