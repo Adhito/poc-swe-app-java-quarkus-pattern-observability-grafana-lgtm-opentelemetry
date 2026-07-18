@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.jboss.logging.Logger;
 
+import jakarta.inject.Inject;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.WebApplicationException;
@@ -18,11 +19,12 @@ public class OrderResource {
     @RestClient
     StockClient stockClient;
 
+    @Inject
+    OrderValidator validator;
+
     @POST
     public Response placeOrder(OrderRequest request) {
-        if (request == null || request.sku() == null || request.sku().isBlank() || request.quantity() <= 0) {
-            throw new WebApplicationException("sku and a positive quantity are required", 400);
-        }
+        validator.validate(request); // @WithSpan("validate-order") — S4
 
         StockItem stock;
         try {

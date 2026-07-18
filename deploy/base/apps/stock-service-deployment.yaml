@@ -27,6 +27,13 @@ spec:
           env:
             - name: QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector.observability.svc.cluster.local:4317
+            # plain credentials — authentication is an explicit non-goal (PRD §3)
+            - name: POSTGRES_JDBC_URL
+              value: jdbc:postgresql://postgres:5432/stock
+            - name: POSTGRES_USER
+              value: stock
+            - name: POSTGRES_PASSWORD
+              value: stock
           readinessProbe:
             httpGet:
               path: /q/health/ready

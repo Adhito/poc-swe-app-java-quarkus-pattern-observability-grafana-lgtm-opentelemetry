@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: tracing-poc
+data:
+  # Runs on first start of an empty data dir (docker-entrypoint-initdb.d).
+  # Data volume is emptyDir, so a pod restart re-seeds — convenient for the POC.
+  # Seed rows match the Phase 1 stub data so demo flows are unchanged (PRD 5.5).
+  01-init.sql: |
+    CREATE TABLE stock (
+        sku      text PRIMARY KEY,
+        name     text NOT NULL,
+        quantity int  NOT NULL
+    );
+
+    INSERT INTO stock (sku, name, quantity) VALUES
+        ('SKU-1', 'Mechanical keyboard', 42),
+        ('SKU-2', 'USB-C dock',          17),
+        ('SKU-3', '27-inch monitor',      8),
+        ('SKU-4', 'Laptop stand',         0);

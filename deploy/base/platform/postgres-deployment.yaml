@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: tracing-poc
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:18.4-alpine
+          ports:
+            - name: pg
+              containerPort: 5432
+          # plain env credentials — authentication is an explicit non-goal (PRD §3)
+          env:
+            - name: POSTGRES_DB
+              value: stock
+            - name: POSTGRES_USER
+              value: stock
+            - name: POSTGRES_PASSWORD
+              value: stock
+          readinessProbe:
+            exec:
+              command: ["pg_isready", "-U", "stock", "-d", "stock"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/postgresql/data
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d
+              readOnly: true
+      volumes:
+        # ephemeral — acceptable for the POC (PRD non-goals); EKS overlay may add EBS later
+        - name: data
+          emptyDir: {}
+        - name: init
+          configMap:
+            name: postgres-init

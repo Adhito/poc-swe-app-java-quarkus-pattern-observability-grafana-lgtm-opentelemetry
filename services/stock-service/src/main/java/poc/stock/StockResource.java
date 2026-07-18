@@ -1,38 +1,54 @@
 package poc.stock;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.jboss.logging.Logger;
 
+import io.agroal.api.AgroalDataSource;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.WebApplicationException;
 
+/**
+ * Plain JDBC on purpose (no ORM): the SQL below is exactly what shows up in
+ * the db.statement attribute of the JDBC spans (S2), which is the point of
+ * this phase. The datasource is telemetry-wrapped via
+ * quarkus.datasource.jdbc.telemetry=true.
+ */
 @Path("/stock")
 public class StockResource {
 
     private static final Logger LOG = Logger.getLogger(StockResource.class);
 
-    // Stub data for Phase 1 — replaced by PostgreSQL via instrumented JDBC in Phase 2 (PRD §7)
-    private final Map<String, StockItem> stock = new ConcurrentHashMap<>(Map.of(
-            "SKU-1", new StockItem("SKU-1", "Mechanical keyboard", 42),
-            "SKU-2", new StockItem("SKU-2", "USB-C dock", 17),
-            "SKU-3", new StockItem("SKU-3", "27-inch monitor", 8),
-            "SKU-4", new StockItem("SKU-4", "Laptop stand", 0)));
+    @Inject
+    AgroalDataSource dataSource;
 
     @GET
     @Path("/{sku}")
     public StockItem get(@PathParam("sku") String sku) {
-        StockItem item = stock.get(sku);
-        if (item == null) {
-            throw new NotFoundException("unknown sku: " + sku);
+        try (Connection conn = dataSource.getConnection();
+                PreparedStatement stmt = conn.prepareStatement(
+                        "SELECT sku, name, quantity FROM stock WHERE sku = ?")) {
+            stmt.setString(1, sku);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (!rs.next()) {
+                    throw new NotFoundException("unknown sku: " + sku);
+                }
+                StockItem item = new StockItem(rs.getString("sku"), rs.getString("name"), rs.getInt("quantity"));
+                LOG.infof("Stock lookup %s -> %d available", sku, item.quantity());
+                return item;
+            }
+        } catch (SQLException e) {
+            throw new InternalServerErrorException("stock lookup failed for " + sku, e);
         }
-        LOG.infof("Stock lookup %s -> %d available", sku, item.quantity());
-        return item;
     }
 
     @POST
@@ -41,16 +57,36 @@ public class StockResource {
         if (request == null || request.sku() == null || request.quantity() <= 0) {
             throw new WebApplicationException("sku and a positive quantity are required", 400);
         }
-        StockItem updated = stock.computeIfPresent(request.sku(), (sku, item) -> {
-            if (item.quantity() < request.quantity()) {
-                throw new WebApplicationException("insufficient stock for " + sku, 409);
+        try (Connection conn = dataSource.getConnection()) {
+            try (PreparedStatement stmt = conn.prepareStatement(
+                    "UPDATE stock SET quantity = quantity - ? WHERE sku = ? AND quantity >= ? "
+                            + "RETURNING sku, name, quantity")) {
+                stmt.setInt(1, request.quantity());
+                stmt.setString(2, request.sku());
+                stmt.setInt(3, request.quantity());
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        StockItem updated = new StockItem(
+                                rs.getString("sku"), rs.getString("name"), rs.getInt("quantity"));
+                        LOG.infof("Reserved %d x %s -> %d remaining",
+                                request.quantity(), request.sku(), updated.quantity());
+                        return updated;
+                    }
+                }
             }
-            return new StockItem(sku, item.name(), item.quantity() - request.quantity());
-        });
-        if (updated == null) {
-            throw new NotFoundException("unknown sku: " + request.sku());
+            // no row updated: either the sku doesn't exist (404) or stock is short (409)
+            try (PreparedStatement check = conn.prepareStatement(
+                    "SELECT quantity FROM stock WHERE sku = ?")) {
+                check.setString(1, request.sku());
+                try (ResultSet rs = check.executeQuery()) {
+                    if (!rs.next()) {
+                        throw new NotFoundException("unknown sku: " + request.sku());
+                    }
+                    throw new WebApplicationException("insufficient stock for " + request.sku(), 409);
+                }
+            }
+        } catch (SQLException e) {
+            throw new InternalServerErrorException("reserve failed for " + request.sku(), e);
         }
-        LOG.infof("Reserved %d x %s -> %d remaining", request.quantity(), request.sku(), updated.quantity());
-        return updated;
     }
 }
