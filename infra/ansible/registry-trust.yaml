@@ -24,13 +24,36 @@
         mode: "0644"
       notify: Restart containerd
 
+    - name: Check whether containerd has a config file
+      ansible.builtin.stat:
+        path: /etc/containerd/config.toml
+      register: containerd_config
+
+    # Nodes without a config file run containerd on built-in defaults. A partial
+    # config merges over those defaults, so setting ONLY config_path changes
+    # nothing else (cgroup driver etc. stay exactly as they were).
+    - name: Create minimal config.toml pointing registry config_path at certs.d
+      ansible.builtin.copy:
+        dest: /etc/containerd/config.toml
+        mode: "0644"
+        content: |
+          # Managed by infra/ansible/registry-trust.yaml (quarkus-tracing-poc).
+          # Partial config: everything not listed here uses containerd defaults.
+          version = 2
+
+          [plugins."io.containerd.grpc.v1.cri".registry]
+            config_path = "{{ certs_d }}"
+      when: not containerd_config.stat.exists
+      notify: Restart containerd
+
     # `containerd config default` emits config_path = "" — point it at certs.d.
     # Idempotent: no change if it's already set.
-    - name: Point containerd registry config_path at certs.d
+    - name: Point existing config.toml registry config_path at certs.d
       ansible.builtin.replace:
         path: /etc/containerd/config.toml
         regexp: '^(\s*config_path\s*=\s*)""'
         replace: '\1"{{ certs_d }}"'
+      when: containerd_config.stat.exists
       notify: Restart containerd
 
     - name: Verify config_path is set
