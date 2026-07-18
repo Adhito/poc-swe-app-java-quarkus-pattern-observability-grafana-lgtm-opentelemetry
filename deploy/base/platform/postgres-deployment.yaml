@@ -19,7 +19,10 @@ spec:
     spec:
       containers:
         - name: postgres
-          image: postgres:18.4-alpine
+          # fully qualified: CRI-O resolves short names via a search list
+          # (quay.io first on this cluster) — unqualified names cause 401
+          # detours and slow pulls
+          image: docker.io/library/postgres:18.4-alpine
           ports:
             - name: pg
               containerPort: 5432
@@ -43,8 +46,11 @@ spec:
             limits:
               memory: 512Mi
           volumeMounts:
+            # postgres:18 moved PGDATA to /var/lib/postgresql/18/<dir> and its
+            # entrypoint REFUSES to start with a volume at the legacy
+            # /var/lib/postgresql/data path — mount the parent instead
             - name: data
-              mountPath: /var/lib/postgresql/data
+              mountPath: /var/lib/postgresql
             - name: init
               mountPath: /docker-entrypoint-initdb.d
               readOnly: true
