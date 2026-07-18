@@ -12,7 +12,11 @@ spec:
   source:
     repoURL: https://kubernetes.github.io/ingress-nginx
     chart: ingress-nginx
-    targetRevision: 4.15.1 # pinned per D7 — recorded in docs/runbook.md
+    # pinned per D7 — recorded in docs/runbook.md. Chart 4.13.x (controller
+    # v1.13) supports K8s 1.29–1.33: covers the current 1.29 cluster (D10(c)
+    # bump deferred) AND a later 1.33 upgrade without a chart change.
+    # (4.15.x requires K8s >= 1.31 and would NOT run on 1.29.)
+    targetRevision: 4.13.9
     helm:
       valuesObject:
         controller:
