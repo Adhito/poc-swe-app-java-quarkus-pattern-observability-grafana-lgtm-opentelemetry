@@ -1,0 +1,22 @@
+# External entry to order-service — used for the Phase 1 exit-criterion curl,
+# and from Phase 3 on by the browser SPA (which is why it gets its own hostname:
+# order-service CORS will allow the frontend origin + traceparent header, PRD 6.1)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: api
+  namespace: tracing-poc
+spec:
+  ingressClassName: nginx
+  rules:
+    # host is environment-specific — patched in each overlay (PRD section 8)
+    - host: api.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: order-service
+                port:
+                  name: http

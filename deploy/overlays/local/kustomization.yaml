@@ -14,3 +14,12 @@ resources:
 patches:
   - path: patch-grafana-ingress.yaml
   - path: patch-otlp-ingress.yaml
+  - path: patch-api-ingress.yaml
+
+# tags rewritten by `make deploy` (kustomize edit set image) to the git SHA (D9);
+# the eks overlay will point these names at ECR instead (Stage B)
+images:
+  - name: 192.168.56.20:5000/order-service
+    newTag: dev
+  - name: 192.168.56.20:5000/stock-service
+    newTag: dev
