@@ -1,67 +1,56 @@
-# Makes containerd on every cluster node trust the Dev VM registry over
-# plain HTTP (PRD D9). Run from the Dev VM:
+# Makes the cluster nodes' container runtime trust the Dev VM registry over
+# plain HTTP (PRD D9). Adapted for CRI-O: the PRD assumed containerd, but the
+# cluster runs CRI-O 1.33 (kubectl get nodes -o wide), so trust lives in
+# /etc/containers/registries.conf.d — not containerd's certs.d/hosts.toml.
+#
+# Run from the Dev VM:
 #   cp inventory.example.ini inventory.ini
 #   ansible-playbook -i inventory.ini registry-trust.yaml
 ---
-- name: Trust the Dev VM registry in containerd
+- name: Trust the Dev VM registry in CRI-O
   hosts: k8s_nodes
   become: true
   vars:
     registry_host: "192.168.56.20:5000"
-    certs_d: /etc/containerd/certs.d
 
   tasks:
-    - name: Ensure certs.d directory for the registry exists
+    - name: Ensure registries.conf.d exists
       ansible.builtin.file:
-        path: "{{ certs_d }}/{{ registry_host }}"
+        path: /etc/containers/registries.conf.d
         state: directory
         mode: "0755"
 
-    - name: Drop hosts.toml trust config
-      ansible.builtin.template:
-        src: templates/hosts.toml.j2
-        dest: "{{ certs_d }}/{{ registry_host }}/hosts.toml"
-        mode: "0644"
-      notify: Restart containerd
-
-    - name: Check whether containerd has a config file
-      ansible.builtin.stat:
-        path: /etc/containerd/config.toml
-      register: containerd_config
-
-    # Nodes without a config file run containerd on built-in defaults. A partial
-    # config merges over those defaults, so setting ONLY config_path changes
-    # nothing else (cgroup driver etc. stay exactly as they were).
-    - name: Create minimal config.toml pointing registry config_path at certs.d
+    - name: Drop insecure-registry config for the Dev VM registry
       ansible.builtin.copy:
-        dest: /etc/containerd/config.toml
+        dest: /etc/containers/registries.conf.d/dev-vm-registry.conf
         mode: "0644"
         content: |
           # Managed by infra/ansible/registry-trust.yaml (quarkus-tracing-poc).
-          # Partial config: everything not listed here uses containerd defaults.
-          version = 2
+          # Allows plain-HTTP pulls from the Dev VM registry (PRD D9).
+          [[registry]]
+          location = "{{ registry_host }}"
+          insecure = true
+      notify: Restart crio
 
-          [plugins."io.containerd.grpc.v1.cri".registry]
-            config_path = "{{ certs_d }}"
-      when: not containerd_config.stat.exists
-      notify: Restart containerd
+    # Cleanup: an earlier version of this playbook assumed containerd and
+    # created these on the nodes. They are inert under CRI-O — remove them.
+    # No-ops on fresh nodes.
+    - name: Remove leftover containerd trust files from the earlier attempt
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "/etc/containerd/certs.d/{{ registry_host }}"
+        - /etc/containerd/config.toml
 
-    # `containerd config default` emits config_path = "" — point it at certs.d.
-    # Idempotent: no change if it's already set.
-    - name: Point existing config.toml registry config_path at certs.d
-      ansible.builtin.replace:
-        path: /etc/containerd/config.toml
-        regexp: '^(\s*config_path\s*=\s*)""'
-        replace: '\1"{{ certs_d }}"'
-      when: containerd_config.stat.exists
-      notify: Restart containerd
-
-    - name: Verify config_path is set
-      ansible.builtin.command: grep -F 'config_path = "{{ certs_d }}"' /etc/containerd/config.toml
+    - name: Verify the registry config landed
+      ansible.builtin.command: grep -F 'location = "{{ registry_host }}"' /etc/containers/registries.conf.d/dev-vm-registry.conf
       changed_when: false
 
   handlers:
-    - name: Restart containerd
+    # Restart is safe: running containers are kept alive by their conmon
+    # processes; kubelet reconnects to the CRI socket.
+    - name: Restart crio
       ansible.builtin.systemd:
-        name: containerd
+        name: crio
         state: restarted
