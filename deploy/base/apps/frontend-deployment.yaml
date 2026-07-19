@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: tracing-poc
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+        # no logs.export/otlp label — nginx static server, not a Quarkus OTLP app (D5)
+    spec:
+      containers:
+        - name: frontend
+          # tag set per-overlay via kustomize `images:` (Makefile writes the git SHA)
+          image: 192.168.56.20:5000/frontend:dev
+          ports:
+            - name: http
+              containerPort: 80
+          # env-injected at container start into config.js — one image, per-env config
+          # (PRD Stage B). Overlays override these for EKS hostnames.
+          env:
+            - name: API_BASE_URL
+              value: http://api.192.168.56.240.nip.io
+            - name: OTLP_URL
+              value: http://otlp.192.168.56.240.nip.io/v1/traces
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              memory: 128Mi

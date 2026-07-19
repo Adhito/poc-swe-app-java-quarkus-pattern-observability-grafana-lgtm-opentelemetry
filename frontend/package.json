@@ -1,0 +1,22 @@
+{
+  "name": "tracing-poc-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@opentelemetry/api": "1.9.0",
+    "@opentelemetry/sdk-trace-web": "2.7.1",
+    "@opentelemetry/resources": "2.7.1",
+    "@opentelemetry/context-zone": "2.7.1",
+    "@opentelemetry/exporter-trace-otlp-http": "0.220.0",
+    "@opentelemetry/instrumentation": "0.220.0",
+    "@opentelemetry/instrumentation-fetch": "0.220.0",
+    "zone.js": "0.15.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}

@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+  namespace: tracing-poc
+spec:
+  rules:
+    # must match the collector CORS allowed origin and the frontend's own origin
+    - host: app.192.168.56.240.nip.io
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: http

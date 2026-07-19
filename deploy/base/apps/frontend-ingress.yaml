@@ -1,0 +1,20 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: frontend
+  namespace: tracing-poc
+spec:
+  ingressClassName: nginx
+  rules:
+    # host is environment-specific — patched in each overlay (PRD section 8).
+    # The local host (app.<ip>.nip.io) must match the collector CORS allowed origin.
+    - host: app.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  name: http
