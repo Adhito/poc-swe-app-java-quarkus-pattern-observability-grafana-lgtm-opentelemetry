@@ -1,7 +1,8 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# Kafka (single-pod KRaft, D6) arrives in Phase 4
 resources:
   - postgres-init-configmap.yaml
   - postgres-deployment.yaml
   - postgres-service.yaml
+  - kafka-deployment.yaml
+  - kafka-service.yaml

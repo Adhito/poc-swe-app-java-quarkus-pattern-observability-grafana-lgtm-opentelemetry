@@ -8,8 +8,8 @@
 
 GIT_SHA  := $(shell git rev-parse --short HEAD)
 REGISTRY := 192.168.56.20:5000
-SERVICES := order-service stock-service       # Quarkus/Jib services
-IMAGES   := order-service stock-service frontend  # everything the overlay tags
+SERVICES := order-service stock-service notification-service       # Quarkus/Jib services
+IMAGES   := order-service stock-service notification-service frontend  # everything the overlay tags
 OVERLAY  := deploy/overlays/local
 
 .PHONY: build-push build-services build-frontend deploy

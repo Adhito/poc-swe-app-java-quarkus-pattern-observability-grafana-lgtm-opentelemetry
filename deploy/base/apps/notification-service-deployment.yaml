@@ -1,34 +1,32 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: order-service
+  name: notification-service
   namespace: tracing-poc
   labels:
-    app: order-service
+    app: notification-service
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: order-service
+      app: notification-service
   template:
     metadata:
       labels:
-        app: order-service
+        app: notification-service
         # D5: excludes these pods from a future node-collection log DaemonSet
         logs.export/otlp: "true"
     spec:
       containers:
-        - name: order-service
-          # tag is set per-overlay via kustomize `images:` (Makefile writes the git SHA)
-          image: 192.168.56.20:5000/order-service:dev
+        - name: notification-service
+          # tag set per-overlay via kustomize `images:` (Makefile writes the git SHA)
+          image: 192.168.56.20:5000/notification-service:dev
           ports:
             - name: http
               containerPort: 8080
           env:
             - name: QUARKUS_OTEL_EXPORTER_OTLP_ENDPOINT
               value: http://otel-collector.observability.svc.cluster.local:4317
-            - name: STOCK_SERVICE_URL
-              value: http://stock-service:8080
             - name: KAFKA_BOOTSTRAP
               value: kafka:9092
           readinessProbe:
