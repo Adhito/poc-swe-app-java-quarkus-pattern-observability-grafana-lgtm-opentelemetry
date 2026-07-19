@@ -21,13 +21,13 @@ patches:
 images:
 - name: 192.168.56.20:5000/frontend
   newName: 192.168.56.20:5000/frontend
-  newTag: 62dc557
-- name: 192.168.56.20:5000/order-service
-  newName: 192.168.56.20:5000/order-service
-  newTag: 62dc557
-- name: 192.168.56.20:5000/stock-service
-  newName: 192.168.56.20:5000/stock-service
-  newTag: 62dc557
+  newTag: ec900bf
 - name: 192.168.56.20:5000/notification-service
   newName: 192.168.56.20:5000/notification-service
-  newTag: dev
+  newTag: ec900bf
+- name: 192.168.56.20:5000/order-service
+  newName: 192.168.56.20:5000/order-service
+  newTag: ec900bf
+- name: 192.168.56.20:5000/stock-service
+  newName: 192.168.56.20:5000/stock-service
+  newTag: ec900bf
