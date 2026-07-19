@@ -1,25 +1,27 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-resources:
-  - ../../base/observability
-  - ../../base/platform
-  - ../../base/apps
   # MetalLB CRs live here (not in base) — MetalLB only exists in the local
   # environment; EKS gets LoadBalancers from AWS (D3)
-  - metallb-ipaddresspool.yaml
-  - metallb-l2advertisement.yaml
+resources:
+- ../../base/observability
+- ../../base/platform
+- ../../base/apps
+- metallb-ipaddresspool.yaml
+- metallb-l2advertisement.yaml
 
 # hostnames are the only thing overlays change on ingresses (PRD section 8)
 patches:
-  - path: patch-grafana-ingress.yaml
-  - path: patch-otlp-ingress.yaml
-  - path: patch-api-ingress.yaml
+- path: patch-grafana-ingress.yaml
+- path: patch-otlp-ingress.yaml
+- path: patch-api-ingress.yaml
 
 # tags rewritten by `make deploy` (kustomize edit set image) to the git SHA (D9);
 # the eks overlay will point these names at ECR instead (Stage B)
 images:
-  - name: 192.168.56.20:5000/order-service
-    newTag: dev
-  - name: 192.168.56.20:5000/stock-service
-    newTag: dev
+- name: 192.168.56.20:5000/order-service
+  newName: 192.168.56.20:5000/order-service
+  newTag: a3df35e
+- name: 192.168.56.20:5000/stock-service
+  newName: 192.168.56.20:5000/stock-service
+  newTag: a3df35e
