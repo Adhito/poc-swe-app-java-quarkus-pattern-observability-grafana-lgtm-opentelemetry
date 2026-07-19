@@ -19,12 +19,12 @@ patches:
 # tags rewritten by `make deploy` (kustomize edit set image) to the git SHA (D9);
 # the eks overlay will point these names at ECR instead (Stage B)
 images:
-- name: 192.168.56.20:5000/order-service
-  newName: 192.168.56.20:5000/order-service
-  newTag: a3df35e
-- name: 192.168.56.20:5000/stock-service
-  newName: 192.168.56.20:5000/stock-service
-  newTag: a3df35e
 - name: 192.168.56.20:5000/frontend
   newName: 192.168.56.20:5000/frontend
-  newTag: dev
+  newTag: b26f6f3
+- name: 192.168.56.20:5000/order-service
+  newName: 192.168.56.20:5000/order-service
+  newTag: b26f6f3
+- name: 192.168.56.20:5000/stock-service
+  newName: 192.168.56.20:5000/stock-service
+  newTag: b26f6f3
