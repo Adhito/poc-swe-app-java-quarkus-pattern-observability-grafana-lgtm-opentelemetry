@@ -21,10 +21,10 @@ patches:
 images:
 - name: 192.168.56.20:5000/frontend
   newName: 192.168.56.20:5000/frontend
-  newTag: b26f6f3
+  newTag: 72f13f9
 - name: 192.168.56.20:5000/order-service
   newName: 192.168.56.20:5000/order-service
-  newTag: b26f6f3
+  newTag: 72f13f9
 - name: 192.168.56.20:5000/stock-service
   newName: 192.168.56.20:5000/stock-service
-  newTag: b26f6f3
+  newTag: 72f13f9
