@@ -34,12 +34,14 @@ public class StockResource {
     @GET
     @Path("/{sku}")
     public StockItem get(@PathParam("sku") String sku) {
+        LOG.infof("Stock lookup requested: sku=%s", sku);
         try (Connection conn = dataSource.getConnection();
                 PreparedStatement stmt = conn.prepareStatement(
                         "SELECT sku, name, quantity FROM stock WHERE sku = ?")) {
             stmt.setString(1, sku);
             try (ResultSet rs = stmt.executeQuery()) {
                 if (!rs.next()) {
+                    LOG.warnf("Stock lookup failed: unknown sku=%s", sku);
                     throw new NotFoundException("unknown sku: " + sku);
                 }
                 StockItem item = new StockItem(rs.getString("sku"), rs.getString("name"), rs.getInt("quantity"));
@@ -47,6 +49,7 @@ public class StockResource {
                 return item;
             }
         } catch (SQLException e) {
+            LOG.errorf(e, "Stock lookup errored: sku=%s", sku);
             throw new InternalServerErrorException("stock lookup failed for " + sku, e);
         }
     }
@@ -55,8 +58,12 @@ public class StockResource {
     @Path("/reserve")
     public StockItem reserve(ReserveRequest request) {
         if (request == null || request.sku() == null || request.quantity() <= 0) {
+            LOG.warnf("Reserve rejected: invalid request sku=%s qty=%s",
+                    request == null ? "<null>" : request.sku(),
+                    request == null ? "<null>" : String.valueOf(request.quantity()));
             throw new WebApplicationException("sku and a positive quantity are required", 400);
         }
+        LOG.infof("Reserve requested: sku=%s qty=%d", request.sku(), request.quantity());
         try (Connection conn = dataSource.getConnection()) {
             try (PreparedStatement stmt = conn.prepareStatement(
                     "UPDATE stock SET quantity = quantity - ? WHERE sku = ? AND quantity >= ? "
@@ -80,12 +87,16 @@ public class StockResource {
                 check.setString(1, request.sku());
                 try (ResultSet rs = check.executeQuery()) {
                     if (!rs.next()) {
+                        LOG.warnf("Reserve rejected: unknown sku=%s", request.sku());
                         throw new NotFoundException("unknown sku: " + request.sku());
                     }
+                    LOG.warnf("Reserve rejected: insufficient stock sku=%s requested=%d available=%d",
+                            request.sku(), request.quantity(), rs.getInt("quantity"));
                     throw new WebApplicationException("insufficient stock for " + request.sku(), 409);
                 }
             }
         } catch (SQLException e) {
+            LOG.errorf(e, "Reserve errored: sku=%s", request.sku());
             throw new InternalServerErrorException("reserve failed for " + request.sku(), e);
         }
     }

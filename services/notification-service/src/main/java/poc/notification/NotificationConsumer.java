@@ -18,6 +18,8 @@ public class NotificationConsumer {
 
     @Incoming("orders-in")
     public void consume(OrderPlaced order) {
+        LOG.infof("Received OrderPlaced from `orders` topic: orderId=%s sku=%s qty=%d",
+                order.orderId(), order.sku(), order.quantity());
         LOG.infof("Notification sent for order %s (%d x %s)",
                 order.orderId(), order.quantity(), order.sku());
     }

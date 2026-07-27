@@ -50,7 +50,18 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /data
+            # subPath replaces just this one file, leaving the rest of the
+            # provisioning dir from the image intact. NOTE: subPath mounts do
+            # NOT hot-reload on ConfigMap change — after editing the datasource
+            # ConfigMap, restart this deployment for it to take effect.
+            - name: grafana-datasources
+              mountPath: /otel-lgtm/grafana/conf/provisioning/datasources/grafana-datasources.yaml
+              subPath: grafana-datasources.yaml
+              readOnly: true
       volumes:
         # ephemeral — acceptable for the POC (PRD non-goals: no trace storage sizing/retention)
         - name: data
           emptyDir: {}
+        - name: grafana-datasources
+          configMap:
+            name: grafana-datasources
