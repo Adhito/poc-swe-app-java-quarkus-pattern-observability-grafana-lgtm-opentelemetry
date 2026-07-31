@@ -89,6 +89,9 @@ Grafana → Explore → Tempo → newest `order-service` trace: the waterfall sh
 - ✅ Phase 5 — metrics exemplars, click-through to trace (**S6**) — **verified on cluster**
 - ⏳ Stage B — EKS migration via `overlays/eks`
 
-**All seven success criteria (S1–S7) are verified on the cluster — Stage A complete.**
+**All seven success criteria (S1–S7) are verified on the cluster — Stage A complete (acceptance pass: 2026-07-31).**
+The final pass happened *during* a live node-rejoin incident and the system
+reconciled correctly once resolved — see `scripts/utility-node-registry-recovery.sh`
+and the fixing log for the story.
 
 **Success criteria:** S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6 ✅ · S7 ✅ (GitOps reproducible) — **all seven verified**
