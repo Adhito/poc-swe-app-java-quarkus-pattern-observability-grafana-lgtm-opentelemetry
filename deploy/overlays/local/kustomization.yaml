@@ -21,13 +21,13 @@ patches:
 images:
 - name: 192.168.56.20:5000/frontend
   newName: 192.168.56.20:5000/frontend
-  newTag: fe11620
+  newTag: 8d80e37
 - name: 192.168.56.20:5000/notification-service
   newName: 192.168.56.20:5000/notification-service
-  newTag: fe11620
+  newTag: 8d80e37
 - name: 192.168.56.20:5000/order-service
   newName: 192.168.56.20:5000/order-service
-  newTag: fe11620
+  newTag: 8d80e37
 - name: 192.168.56.20:5000/stock-service
   newName: 192.168.56.20:5000/stock-service
-  newTag: fe11620
+  newTag: 8d80e37
