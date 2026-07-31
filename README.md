@@ -74,7 +74,7 @@ Then place an order and follow the trace:
 
 ```bash
 curl -s -X POST http://api.192.168.56.240.nip.io/orders \
-  -H 'content-type: application/json' -d '{"sku":"SKU-1","quantity":2}'
+  -H 'content-type: application/json' -d '{"sku":"MG RX-78 Gundam","quantity":2}'
 ```
 
 Grafana → Explore → Tempo → newest `order-service` trace: the waterfall shows `POST /orders`, the `validate-order` custom span, the nested `stock-service` call, and the SQL `SELECT` with its statement — one trace ID end to end.

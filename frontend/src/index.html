@@ -5,28 +5,147 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Tracing POC — Place Order</title>
     <style>
-      body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 3rem auto; padding: 0 1rem; }
-      h1 { font-size: 1.3rem; }
-      label { display: block; margin: 0.75rem 0 0.25rem; }
-      input, button { font-size: 1rem; padding: 0.4rem 0.6rem; }
-      button { margin-top: 1rem; cursor: pointer; }
-      #result { white-space: pre-wrap; margin-top: 1.5rem; padding: 0.75rem; background: #f4f4f5; border-radius: 6px; min-height: 2rem; }
+      :root {
+        --bg: #f5f5f5;
+        --card: #ffffff;
+        --border: #d4d4d8;
+        --border-focus: #52525b;
+        --text: #18181b;
+        --text-muted: #71717a;
+        --button: #18181b;
+        --button-hover: #27272a;
+        --result-bg: #f4f4f5;
+        --result-border: #3f3f46;
+      }
+
+      * { box-sizing: border-box; }
+
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 12px;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 4px 12px rgba(0, 0, 0, 0.08);
+        max-width: 26rem;
+        width: 100%;
+        padding: 2rem;
+      }
+
+      h1 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem;
+        letter-spacing: -0.01em;
+      }
+
+      .subtitle {
+        color: var(--text-muted);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin: 0 0 1.5rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.8125rem;
+        font-weight: 500;
+        color: var(--text-muted);
+        margin: 1rem 0 0.375rem;
+      }
+
+      label:first-of-type { margin-top: 0; }
+
+      select,
+      input {
+        width: 100%;
+        font-size: 0.9375rem;
+        font-family: inherit;
+        color: var(--text);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.55rem 0.7rem;
+        outline: none;
+        transition: border-color 0.15s ease;
+      }
+
+      select:focus,
+      input:focus {
+        border-color: var(--border-focus);
+      }
+
+      button {
+        width: 100%;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        font-family: inherit;
+        color: #ffffff;
+        background: var(--button);
+        border: none;
+        border-radius: 8px;
+        padding: 0.65rem 0.7rem;
+        margin-top: 1.5rem;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      button:hover { background: var(--button-hover); }
+      button:active { transform: translateY(1px); }
+
+      #result {
+        white-space: pre-wrap;
+        margin-top: 1.5rem;
+        padding: 0.75rem 0.9rem;
+        background: var(--result-bg);
+        border-left: 3px solid var(--result-border);
+        border-radius: 6px;
+        min-height: 1.5rem;
+        font-size: 0.875rem;
+        line-height: 1.6;
+      }
+
+      #result:empty { display: none; }
+
+      #result .trace-id {
+        display: block;
+        margin-top: 0.35rem;
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+      }
     </style>
     <!-- config.js is generated at container start from env (API_BASE_URL, OTLP_URL);
          must load BEFORE the bundle so window.__APP_CONFIG__ exists -->
     <script src="config.js"></script>
   </head>
   <body>
-    <h1>Tracing POC — Place an order</h1>
-    <p>Places an order via order-service. The click starts the root span; the trace flows browser → order → stock → SQL.</p>
-    <form id="order-form">
-      <label for="sku">SKU</label>
-      <input id="sku" value="SKU-1" />
-      <label for="quantity">Quantity</label>
-      <input id="quantity" type="number" value="2" min="1" />
-      <button type="submit">Place order</button>
-    </form>
-    <div id="result"></div>
+    <div class="card">
+      <h1>🤖 Gunpla Order Tracing POC</h1>
+      <p class="subtitle">Places an order via order-service. The click starts the root span; the trace flows browser → order → stock → SQL.</p>
+      <form id="order-form">
+        <label for="sku">Model kit</label>
+        <select id="sku">
+          <option value="MG RX-78 Gundam" selected>MG RX-78 Gundam</option>
+          <option value="RG Zaku II">RG Zaku II</option>
+          <option value="PG Unicorn Gundam">PG Unicorn Gundam</option>
+          <option value="HG Barbatos Lupus Rex">HG Barbatos Lupus Rex</option>
+        </select>
+        <label for="quantity">Quantity</label>
+        <input id="quantity" type="number" value="2" min="1" />
+        <button type="submit">Place order</button>
+      </form>
+      <div id="result"></div>
+    </div>
     <script src="bundle.js"></script>
   </body>
 </html>

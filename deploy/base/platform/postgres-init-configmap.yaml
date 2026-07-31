@@ -6,7 +6,9 @@ metadata:
 data:
   # Runs on first start of an empty data dir (docker-entrypoint-initdb.d).
   # Data volume is emptyDir, so a pod restart re-seeds — convenient for the POC.
-  # Seed rows match the Phase 1 stub data so demo flows are unchanged (PRD 5.5).
+  # Gunpla catalog (cosmetic checkpoint, post-Stage-A). Quantities kept
+  # identical to the original stub data so the demo shape (S1/S4/S5, plus the
+  # insufficient-stock 409 path on the last row) is unchanged — only relabeled.
   01-init.sql: |
     CREATE TABLE stock (
         sku      text PRIMARY KEY,
@@ -15,7 +17,7 @@ data:
     );
 
     INSERT INTO stock (sku, name, quantity) VALUES
-        ('SKU-1', 'Mechanical keyboard', 42),
-        ('SKU-2', 'USB-C dock',          17),
-        ('SKU-3', '27-inch monitor',      8),
-        ('SKU-4', 'Laptop stand',         0);
+        ('MG RX-78 Gundam',       'Master Grade RX-78-2 Gundam',    42),
+        ('RG Zaku II',            'Real Grade Zaku II',             17),
+        ('PG Unicorn Gundam',     'Perfect Grade Unicorn Gundam',    8),
+        ('HG Barbatos Lupus Rex', 'High Grade Barbatos Lupus Rex',   0);
