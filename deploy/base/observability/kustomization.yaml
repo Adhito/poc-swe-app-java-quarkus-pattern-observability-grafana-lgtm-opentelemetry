@@ -6,6 +6,7 @@ resources:
   - otel-collector-deployment.yaml
   - otel-collector-service.yaml
   - grafana-datasources-configmap.yaml
+  - grafana-dashboard-exemplars-configmap.yaml
   - lgtm-deployment.yaml
   - lgtm-service.yaml
   - grafana-ingress.yaml

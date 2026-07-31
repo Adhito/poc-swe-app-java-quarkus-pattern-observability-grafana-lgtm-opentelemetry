@@ -58,6 +58,17 @@ spec:
               mountPath: /otel-lgtm/grafana/conf/provisioning/datasources/grafana-datasources.yaml
               subPath: grafana-datasources.yaml
               readOnly: true
+            # Phase 5 / S6: additive dashboard provider (new filename, doesn't
+            # touch the image's own grafana-dashboards.yaml or its 3 dashboards)
+            # + the dashboard JSON itself, in a location the provider can read.
+            - name: grafana-dashboard-exemplars
+              mountPath: /otel-lgtm/grafana/conf/provisioning/dashboards/order-exemplars-provider.yaml
+              subPath: provider.yaml
+              readOnly: true
+            - name: grafana-dashboard-exemplars
+              mountPath: /var/lib/grafana-custom-dashboards/order-exemplars.json
+              subPath: order-exemplars.json
+              readOnly: true
       volumes:
         # ephemeral — acceptable for the POC (PRD non-goals: no trace storage sizing/retention)
         - name: data
@@ -65,3 +76,6 @@ spec:
         - name: grafana-datasources
           configMap:
             name: grafana-datasources
+        - name: grafana-dashboard-exemplars
+          configMap:
+            name: grafana-dashboard-exemplars

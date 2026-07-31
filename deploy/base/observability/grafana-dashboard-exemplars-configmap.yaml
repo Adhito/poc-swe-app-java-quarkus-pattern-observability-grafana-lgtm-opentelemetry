@@ -1,0 +1,72 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-dashboard-exemplars
+  namespace: observability
+data:
+  # Added ADDITIVELY alongside the image's own bundled dashboard provider
+  # (/otel-lgtm/grafana/conf/provisioning/dashboards/grafana-dashboards.yaml,
+  # which lists 3 file-type providers for its own RED-metrics/JVM dashboards).
+  # This is a NEW provider file in the same directory — nothing existing is
+  # touched or overwritten.
+  #
+  # Why not use the bundled "RED Metrics (classic histogram)" dashboard: its
+  # queries filter on an `instance` label that classic Prometheus scraping
+  # auto-assigns, but our metrics arrive via OTLP push (no scrape target), so
+  # they never get an `instance` label — every panel in that dashboard silently
+  # returns "No data". Confirmed via Explore: dropping the `instance` filter
+  # (query below) returns data with exemplars immediately.
+  provider.yaml: |
+    apiVersion: 1
+    providers:
+      - name: "Order Service Exemplars (S6)"
+        type: file
+        options:
+          path: /var/lib/grafana-custom-dashboards/order-exemplars.json
+          foldersFromFilesStructure: false
+
+  # Query verified manually in Grafana Explore before provisioning (2026-07-31):
+  # exemplar tooltip showed a real trace_id/span_id, and the trace link opened
+  # the correct order-service trace in Tempo.
+  order-exemplars.json: |
+    {
+      "title": "Order Service — Latency Exemplars (S6)",
+      "uid": "order-exemplars",
+      "schemaVersion": 39,
+      "version": 1,
+      "editable": true,
+      "time": { "from": "now-1h", "to": "now" },
+      "panels": [
+        {
+          "id": 1,
+          "type": "timeseries",
+          "title": "order-service HTTP request duration (p50 / p95) — click an exemplar dot to open its trace",
+          "gridPos": { "h": 12, "w": 24, "x": 0, "y": 0 },
+          "datasource": { "type": "prometheus", "uid": "prometheus" },
+          "targets": [
+            {
+              "refId": "A",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.95, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"order-service\"}[5m])))",
+              "legendFormat": "p95",
+              "exemplar": true
+            },
+            {
+              "refId": "B",
+              "datasource": { "type": "prometheus", "uid": "prometheus" },
+              "expr": "histogram_quantile(0.50, sum by (le) (rate(http_server_request_duration_seconds_bucket{job=\"order-service\"}[5m])))",
+              "legendFormat": "p50",
+              "exemplar": true
+            }
+          ],
+          "fieldConfig": {
+            "defaults": { "unit": "s" },
+            "overrides": []
+          },
+          "options": {
+            "legend": { "displayMode": "list", "placement": "bottom" },
+            "tooltip": { "mode": "single" }
+          }
+        }
+      ]
+    }

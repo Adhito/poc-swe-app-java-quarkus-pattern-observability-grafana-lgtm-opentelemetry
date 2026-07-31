@@ -86,7 +86,9 @@ Grafana → Explore → Tempo → newest `order-service` trace: the waterfall sh
 - ✅ Phase 2 — PostgreSQL, JDBC spans, OTLP logs, `@WithSpan` (**S2, S3, S4**) — **verified on cluster**
 - ✅ Phase 3 — browser root span, OTel JS + CORS (**S1 extended to the browser**) — **verified on cluster**
 - ✅ Phase 4 — async Kafka hop, single-pod KRaft + notification-service (**S5**) — **verified on cluster**
-- ⏳ Phase 5 — exemplars (S6)
+- ✅ Phase 5 — metrics exemplars, click-through to trace (**S6**) — **verified on cluster**
 - ⏳ Stage B — EKS migration via `overlays/eks`
 
-**Success criteria:** S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6 ⏳ · S7 ✅ (GitOps reproducible)
+**All seven success criteria (S1–S7) are verified on the cluster — Stage A complete.**
+
+**Success criteria:** S1 ✅ · S2 ✅ · S3 ✅ · S4 ✅ · S5 ✅ · S6 ✅ · S7 ✅ (GitOps reproducible) — **all seven verified**
