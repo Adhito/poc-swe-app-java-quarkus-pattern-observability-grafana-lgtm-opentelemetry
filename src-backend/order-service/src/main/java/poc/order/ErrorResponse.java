@@ -1,0 +1,5 @@
+package poc.order;
+
+// Matches what the frontend expects: body.error (frontend/src/app.js)
+public record ErrorResponse(String error) {
+}
