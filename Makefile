@@ -18,12 +18,12 @@ build-push: build-services build-frontend
 
 # Quarkus services via Jib (daemonless — no Docker needed for these)
 build-services:
-	@if ! git diff --quiet HEAD -- services/; then \
-		echo "WARNING: uncommitted changes under services/ — image tag $(GIT_SHA) will not match the code"; \
+	@if ! git diff --quiet HEAD -- src-backend/; then \
+		echo "WARNING: uncommitted changes under src-backend/ — image tag $(GIT_SHA) will not match the code"; \
 	fi
 	@for svc in $(SERVICES); do \
 		echo "==> $$svc ($(GIT_SHA))"; \
-		( cd services/$$svc && mvn -q package \
+		( cd src-backend/$$svc && mvn -q package \
 			-Dquarkus.container-image.build=true \
 			-Dquarkus.container-image.push=true \
 			-Dquarkus.container-image.tag=$(GIT_SHA) ) || exit 1; \
@@ -33,11 +33,11 @@ build-services:
 # `--tls-verify` isn't a thing for docker; the insecure registry is trusted via
 # /etc/docker/daemon.json on the Dev VM.
 build-frontend:
-	@if ! git diff --quiet HEAD -- frontend/; then \
-		echo "WARNING: uncommitted changes under frontend/ — image tag $(GIT_SHA) will not match the code"; \
+	@if ! git diff --quiet HEAD -- src-frontend/; then \
+		echo "WARNING: uncommitted changes under src-frontend/ — image tag $(GIT_SHA) will not match the code"; \
 	fi
 	@echo "==> frontend ($(GIT_SHA))"
-	docker build -t $(REGISTRY)/frontend:$(GIT_SHA) frontend/
+	docker build -t $(REGISTRY)/frontend:$(GIT_SHA) src-frontend/
 	docker push $(REGISTRY)/frontend:$(GIT_SHA)
 
 deploy:

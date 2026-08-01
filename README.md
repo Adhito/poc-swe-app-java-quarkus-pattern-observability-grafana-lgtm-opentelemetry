@@ -32,15 +32,17 @@ Quarkus 3.33 LTS (Java 21) · OpenTelemetry (traces, logs, metrics over OTLP) ·
 ## Repository layout
 
 ```
-services/           order-service, stock-service (Quarkus; more per phase)
+src-backend/         order-service, stock-service, notification-service (Quarkus)
+src-frontend/        browser SPA (OTel JS), built into the frontend image
 deploy/
   base/             environment-agnostic manifests (observability, platform, apps)
   overlays/local    Vagrant-cluster overlay: MetalLB pool, nip.io hostnames, image tags
   overlays/eks*     AWS EKS overlays (Stage B, placeholder)
   argocd/           app-of-apps: local-root.yaml is the ONE manifest applied by hand
-infra/
+src-infra/
   devvm-registry/   plain-HTTP registry (Docker) on the Dev VM at 192.168.56.20:5000
   ansible/          CRI-O registry-trust playbook for the cluster nodes
+scripts/            operational utilities (e.g. node-registry-recovery)
 Makefile            build-push (Jib → registry, tag = git SHA) and deploy (GitOps bump)
 ```
 
@@ -58,8 +60,8 @@ Makefile            build-push (Jib → registry, tag = git SHA) and deploy (Git
 
 ## Bootstrap (once per cluster)
 
-1. **Registry** on the Dev VM — see `infra/devvm-registry/README.md`
-2. **Runtime trust** on the nodes — `ansible-playbook -i inventory.ini infra/ansible/registry-trust.yaml`
+1. **Registry** on the Dev VM — see `src-infra/devvm-registry/README.md`
+2. **Runtime trust** on the nodes — `ansible-playbook -i inventory.ini src-infra/ansible/registry-trust.yaml`
 3. **ArgoCD** — `kubectl apply -f deploy/argocd/local-root.yaml` (the only imperative step; everything else reconciles from Git: MetalLB → ingress-nginx → observability + platform + apps)
 
 ## Daily loop

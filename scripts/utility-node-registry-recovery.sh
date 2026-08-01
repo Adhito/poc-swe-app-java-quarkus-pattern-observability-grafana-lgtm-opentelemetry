@@ -31,7 +31,7 @@ SSH_USER="${SSH_USER:-vagrant}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-ANSIBLE_DIR="$REPO_ROOT/infra/ansible"
+ANSIBLE_DIR="$REPO_ROOT/src-infra/ansible"
 
 echo "==> Step 1/4: copying SSH key to $SSH_USER@$NODE_IP"
 echo "    (password prompt only appears if the key isn't already trusted)"

@@ -25,7 +25,7 @@
         dest: /etc/containers/registries.conf.d/dev-vm-registry.conf
         mode: "0644"
         content: |
-          # Managed by infra/ansible/registry-trust.yaml (quarkus-tracing-poc).
+          # Managed by src-infra/ansible/registry-trust.yaml (quarkus-tracing-poc).
           # Allows plain-HTTP pulls from the Dev VM registry (PRD D9).
           [[registry]]
           location = "{{ registry_host }}"
