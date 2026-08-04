@@ -1,4 +1,4 @@
-import { SpanStatusCode } from '@opentelemetry/api';
+import { SpanStatusCode, context, trace } from '@opentelemetry/api';
 import { tracer, API_BASE_URL } from './otel.js';
 
 const POLL_INTERVAL_MS = 1000;
@@ -100,18 +100,31 @@ function renderShipment(shipment) {
 /**
  * Polls GET /orders/{id} until the async branch produces a shipment.
  *
- * The whole loop is wrapped in ONE span, so every poll lands in a single trace
- * rather than scattering one trace per request. That trace is deliberately
- * separate from the place-order trace: it's the READ path
- * (browser → order-service → [Postgres] + [shipping-service → Postgres]),
- * a structurally different shape worth comparing against the write path.
+ * Every poll lands in ONE trace rather than scattering one trace per request.
+ * That trace is deliberately separate from the place-order trace: it's the
+ * READ path (browser → order-service → [Postgres] + [shipping-service →
+ * Postgres]), a structurally different shape worth comparing against the write
+ * path.
+ *
+ * Note the explicit `context.with(...)` around each fetch. The obvious version
+ * — startActiveSpan with the loop inside — does NOT work: the ambient context
+ * doesn't survive `await sleep(...)`, so every poll after the first escapes and
+ * starts its own root trace (visible in Tempo as stray `HTTP GET` traces
+ * alongside await-shipment). Re-entering the captured context per fetch is what
+ * actually keeps them together, because the fetch instrumentation reads the
+ * active context synchronously at call time.
  */
 function awaitShipment(orderId) {
-  return tracer.startActiveSpan('await-shipment', async (span) => {
-    span.setAttribute('app.order_id', orderId);
+  const span = tracer.startSpan('await-shipment');
+  span.setAttribute('app.order_id', orderId);
+  const spanCtx = trace.setSpan(context.active(), span);
+
+  return (async () => {
     try {
       for (let attempt = 1; attempt <= MAX_POLLS; attempt++) {
-        const res = await fetch(`${API_BASE_URL}/orders/${encodeURIComponent(orderId)}`);
+        const res = await context.with(spanCtx, () =>
+          fetch(`${API_BASE_URL}/orders/${encodeURIComponent(orderId)}`),
+        );
         if (res.ok) {
           const body = await res.json();
           if (body.shipment) {
@@ -133,5 +146,5 @@ function awaitShipment(orderId) {
     } finally {
       span.end();
     }
-  });
+  })();
 }

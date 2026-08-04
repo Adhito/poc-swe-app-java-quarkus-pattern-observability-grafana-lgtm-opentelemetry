@@ -6,12 +6,56 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/XSAM/otelsql"
 	_ "github.com/jackc/pgx/v5/stdlib" // registers the "pgx" database/sql driver
 	"go.opentelemetry.io/otel/attribute"
 )
+
+// sqlSpanName turns a statement into a Java-JDBC-style span name
+// ("INSERT shipments", "SELECT shipments"), so Go and Java DB spans are
+// directly comparable in the trace waterfall. Returns "" if it can't tell.
+func sqlSpanName(query string) string {
+	fields := strings.Fields(query)
+	if len(fields) == 0 {
+		return ""
+	}
+	op := strings.ToUpper(fields[0])
+	switch op {
+	case "INSERT", "DELETE":
+		keyword := "INTO"
+		if op == "DELETE" {
+			keyword = "FROM"
+		}
+		if table := tokenAfter(fields, keyword); table != "" {
+			return op + " " + table
+		}
+	case "SELECT":
+		if table := tokenAfter(fields, "FROM"); table != "" {
+			return op + " " + table
+		}
+	case "UPDATE":
+		if len(fields) > 1 {
+			return op + " " + trimIdentifier(fields[1])
+		}
+	}
+	return op
+}
+
+func tokenAfter(fields []string, keyword string) string {
+	for i, field := range fields {
+		if strings.EqualFold(field, keyword) && i+1 < len(fields) {
+			return trimIdentifier(fields[i+1])
+		}
+	}
+	return ""
+}
+
+func trimIdentifier(s string) string {
+	return strings.Trim(s, "\"`(),;")
+}
 
 type shipmentRecord struct {
 	ShipmentID string
@@ -35,6 +79,24 @@ func openDB() (*sql.DB, error) {
 
 	db, err := otelsql.Open("pgx", dsn,
 		otelsql.WithAttributes(attribute.String("db.system", "postgresql")),
+		otelsql.WithSpanOptions(otelsql.SpanOptions{
+			// Connection-lifecycle spans (reset_session, prepare, rows) are
+			// pure noise in the waterfall — we only care about statements.
+			OmitConnResetSession: true,
+			OmitConnPrepare:      true,
+			OmitRows:             true,
+			OmitConnectorConnect: true,
+		}),
+		// Java's JDBC instrumentation names spans after the statement
+		// ("INSERT stock.orders"); otelsql defaults to the connection method
+		// ("sql.conn.exec"), which tells you nothing about the query. Derive a
+		// comparable name so the Go DB spans read like the Java ones in Tempo.
+		otelsql.WithSpanNameFormatter(func(_ context.Context, method otelsql.Method, query string) string {
+			if name := sqlSpanName(query); name != "" {
+				return name
+			}
+			return string(method)
+		}),
 	)
 	if err != nil {
 		return nil, fmt.Errorf("open db: %w", err)
