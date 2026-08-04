@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping-service
+  namespace: tracing-poc
+  labels:
+    app: shipping-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: shipping-service
+  template:
+    metadata:
+      labels:
+        app: shipping-service
+        # D5: excludes these pods from a future node-collection log DaemonSet
+        logs.export/otlp: "true"
+    spec:
+      containers:
+        - name: shipping-service
+          # tag set per-overlay via kustomize `images:` (Makefile writes the git SHA)
+          image: 192.168.56.20:5000/shipping-service:dev
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # The Go SDK reads these natively — same collector endpoint the
+            # Java services use, just via the standard OTEL_* env vars rather
+            # than Quarkus config keys.
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: http://otel-collector.observability.svc.cluster.local:4317
+            - name: OTEL_SERVICE_NAME
+              value: shipping-service
+            # Redundant with the http:// scheme above, but explicit: the gRPC
+            # exporter otherwise defaults to TLS and would fail silently-ish.
+            - name: OTEL_EXPORTER_OTLP_INSECURE
+              value: "true"
+            - name: CARRIER_SERVICE_URL
+              value: http://carrier-service:8080
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 2
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 5
+          # Go's footprint vs the JVM services (256Mi) — a real benefit given
+          # this cluster's memory history.
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              memory: 64Mi

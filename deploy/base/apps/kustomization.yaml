@@ -11,3 +11,7 @@ resources:
   - frontend-service.yaml
   - frontend-ingress.yaml
   - notification-service-deployment.yaml
+  - shipping-service-deployment.yaml
+  - shipping-service-service.yaml
+  - carrier-service-deployment.yaml
+  - carrier-service-service.yaml

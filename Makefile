@@ -8,13 +8,14 @@
 
 GIT_SHA  := $(shell git rev-parse --short HEAD)
 REGISTRY := 192.168.56.20:5000
-SERVICES := order-service stock-service notification-service       # Quarkus/Jib services
-IMAGES   := order-service stock-service notification-service frontend  # everything the overlay tags
-OVERLAY  := deploy/overlays/local
+SERVICES    := order-service stock-service notification-service       # Quarkus/Jib services
+GO_SERVICES := shipping-service carrier-service                       # Go/docker services
+IMAGES      := order-service stock-service notification-service shipping-service carrier-service frontend
+OVERLAY     := deploy/overlays/local
 
-.PHONY: build-push build-services build-frontend deploy
+.PHONY: build-push build-services build-go build-frontend deploy
 
-build-push: build-services build-frontend
+build-push: build-services build-go build-frontend
 
 # Quarkus services via Jib (daemonless — no Docker needed for these)
 build-services:
@@ -27,6 +28,18 @@ build-services:
 			-Dquarkus.container-image.build=true \
 			-Dquarkus.container-image.push=true \
 			-Dquarkus.container-image.tag=$(GIT_SHA) ) || exit 1; \
+	done
+
+# Go services — multi-stage docker build (Jib is Java-only). The Docker build
+# is also the compile+vet gate, since the authoring machine has no Go toolchain.
+build-go:
+	@if ! git diff --quiet HEAD -- src-backend/; then \
+		echo "WARNING: uncommitted changes under src-backend/ — image tag $(GIT_SHA) will not match the code"; \
+	fi
+	@for svc in $(GO_SERVICES); do \
+		echo "==> $$svc ($(GIT_SHA))"; \
+		docker build -t $(REGISTRY)/$$svc:$(GIT_SHA) src-backend/$$svc || exit 1; \
+		docker push $(REGISTRY)/$$svc:$(GIT_SHA) || exit 1; \
 	done
 
 # Frontend is static JS (not Java) — plain multi-stage docker build, not Jib.

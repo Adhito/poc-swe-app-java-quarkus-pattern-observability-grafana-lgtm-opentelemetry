@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: carrier-service
+  namespace: tracing-poc
+  labels:
+    app: carrier-service
+spec:
+  selector:
+    app: carrier-service
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http
