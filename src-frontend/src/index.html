@@ -41,11 +41,22 @@
         padding: 2rem;
       }
 
+      .card[hidden] { display: none; }
+
       h1 {
         font-size: 1.25rem;
         font-weight: 600;
         margin: 0 0 0.5rem;
         letter-spacing: -0.01em;
+      }
+
+      h2 {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--text-muted);
+        margin: 1.5rem 0 0.5rem;
       }
 
       .subtitle {
@@ -80,9 +91,7 @@
       }
 
       select:focus,
-      input:focus {
-        border-color: var(--border-focus);
-      }
+      input:focus { border-color: var(--border-focus); }
 
       button {
         width: 100%;
@@ -116,12 +125,80 @@
 
       #result:empty { display: none; }
 
-      #result .trace-id {
-        display: block;
-        margin-top: 0.35rem;
+      /* --- confirmation view --- */
+      .details { margin: 0; }
+
+      .row {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f4f4f5;
+        font-size: 0.9375rem;
+      }
+
+      .row:last-child { border-bottom: none; }
+
+      .row dt {
+        color: var(--text-muted);
+        font-size: 0.8125rem;
+        flex-shrink: 0;
+      }
+
+      .row dd {
+        margin: 0;
+        text-align: right;
+        font-weight: 500;
+        word-break: break-all;
+      }
+
+      .mono {
         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 0.8125rem;
+        font-weight: 400;
+      }
+
+      .pill {
+        display: inline-block;
+        padding: 0.15rem 0.6rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        background: #e4e4e7;
+        color: #52525b;
+      }
+
+      .pill.pending::after {
+        content: "";
+        display: inline-block;
+        width: 0.35rem;
+        height: 0.35rem;
+        margin-left: 0.4rem;
+        border-radius: 50%;
+        background: #a1a1aa;
+        animation: pulse 1.1s ease-in-out infinite;
+      }
+
+      .pill.done {
+        background: var(--button);
+        color: #ffffff;
+      }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 0.25; }
+        50%      { opacity: 1; }
+      }
+
+      .trace {
+        margin: 1.25rem 0 0;
+        padding-top: 0.9rem;
+        border-top: 1px solid #f4f4f5;
+        font-size: 0.75rem;
         color: var(--text-muted);
+        line-height: 1.6;
+        word-break: break-all;
       }
     </style>
     <!-- config.js is generated at container start from env (API_BASE_URL, OTLP_URL);
@@ -129,9 +206,9 @@
     <script src="config.js"></script>
   </head>
   <body>
-    <div class="card">
+    <div class="card" id="order-view">
       <h1>🤖 Adhito's Gunpla Order Tracing POC</h1>
-      <p class="subtitle">Places an order via order-service. The click starts the root span; the trace flows browser → order → stock → SQL.</p>
+      <p class="subtitle">Places an order via order-service. The click starts the root span; the trace flows browser → order → stock → SQL → Kafka → shipping → carrier.</p>
       <form id="order-form">
         <label for="sku">Model kit</label>
         <select id="sku">
@@ -146,6 +223,32 @@
       </form>
       <div id="result"></div>
     </div>
+
+    <div class="card" id="confirm-view" hidden>
+      <h1>✅ Order confirmed</h1>
+      <p class="subtitle">Shipping runs <em>after</em> this page already got its response — watch it land below.</p>
+
+      <dl class="details">
+        <div class="row"><dt>Order</dt><dd id="c-order-id" class="mono"></dd></div>
+        <div class="row"><dt>Model kit</dt><dd id="c-sku"></dd></div>
+        <div class="row"><dt>Quantity</dt><dd id="c-qty"></dd></div>
+        <div class="row"><dt>Status</dt><dd><span id="c-status" class="pill"></span></dd></div>
+      </dl>
+
+      <div id="shipment-block" hidden>
+        <h2>Shipment</h2>
+        <dl class="details">
+          <div class="row"><dt>Carrier</dt><dd id="c-carrier"></dd></div>
+          <div class="row"><dt>Cost</dt><dd id="c-cost"></dd></div>
+          <div class="row"><dt>Arrives in</dt><dd id="c-eta"></dd></div>
+          <div class="row"><dt>Shipment</dt><dd id="c-shipment-id" class="mono"></dd></div>
+        </dl>
+      </div>
+
+      <p class="trace">order trace <span id="c-trace" class="mono"></span></p>
+      <button type="button" id="new-order">Place another order</button>
+    </div>
+
     <script src="bundle.js"></script>
   </body>
 </html>

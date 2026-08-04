@@ -31,6 +31,17 @@ spec:
               value: http://stock-service:8080
             - name: KAFKA_BOOTSTRAP
               value: kafka:9092
+            # order-service owns the `orders` table (shipping-service owns
+            # `shipments`); plain credentials — auth is a non-goal (PRD §3)
+            - name: POSTGRES_JDBC_URL
+              value: jdbc:postgresql://postgres:5432/stock
+            - name: POSTGRES_USER
+              value: stock
+            - name: POSTGRES_PASSWORD
+              value: stock
+            # read path for the confirmation page
+            - name: SHIPPING_SERVICE_URL
+              value: http://shipping-service:8080
           readinessProbe:
             httpGet:
               path: /q/health/ready

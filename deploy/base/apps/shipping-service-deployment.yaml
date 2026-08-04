@@ -38,6 +38,10 @@ spec:
               value: "true"
             - name: CARRIER_SERVICE_URL
               value: http://carrier-service:8080
+            # shipping-service owns the `shipments` table (order-service owns
+            # `orders`); same instance, plain credentials — auth is a non-goal
+            - name: POSTGRES_DSN
+              value: postgres://stock:stock@postgres:5432/stock?sslmode=disable
           readinessProbe:
             httpGet:
               path: /healthz

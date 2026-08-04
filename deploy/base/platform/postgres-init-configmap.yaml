@@ -21,3 +21,33 @@ data:
         ('RG Zaku II',            'Real Grade Zaku II',             17),
         ('PG Unicorn Gundam',     'Perfect Grade Unicorn Gundam',    8),
         ('HG Barbatos Lupus Rex', 'High Grade Barbatos Lupus Rex',   0);
+
+    -- Owned by order-service (Java). Written on the synchronous path so the
+    -- confirmation page has something to read back immediately.
+    -- trace_id is stored so the UI can deep-link the order to its own trace.
+    CREATE TABLE orders (
+        order_id   text PRIMARY KEY,
+        sku        text NOT NULL,
+        quantity   int  NOT NULL,
+        status     text NOT NULL,
+        trace_id   text,
+        created_at timestamptz NOT NULL DEFAULT now()
+    );
+
+    -- Owned by shipping-service (Go), written on the ASYNC path after the
+    -- carrier quote — i.e. after the browser already has its 201. That lag is
+    -- exactly what the confirmation page's polling makes visible.
+    --
+    -- Two services writing to one Postgres instance is a deliberate POC
+    -- simplification: separate tables keep ownership clean without running a
+    -- second database. Flagged in the runbook.
+    CREATE TABLE shipments (
+        shipment_id text PRIMARY KEY,
+        order_id    text NOT NULL,
+        carrier     text NOT NULL,
+        cost_idr    numeric(12,2) NOT NULL,
+        eta_days    int  NOT NULL,
+        status      text NOT NULL,
+        created_at  timestamptz NOT NULL DEFAULT now()
+    );
+    CREATE INDEX shipments_order_id_idx ON shipments (order_id);
