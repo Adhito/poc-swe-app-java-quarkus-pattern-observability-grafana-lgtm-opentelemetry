@@ -21,19 +21,19 @@ patches:
 images:
 - name: 192.168.56.20:5000/carrier-service
   newName: 192.168.56.20:5000/carrier-service
-  newTag: 904b70d
+  newTag: d8f6dc4
 - name: 192.168.56.20:5000/frontend
   newName: 192.168.56.20:5000/frontend
-  newTag: 904b70d
+  newTag: d8f6dc4
 - name: 192.168.56.20:5000/notification-service
   newName: 192.168.56.20:5000/notification-service
-  newTag: 904b70d
+  newTag: d8f6dc4
 - name: 192.168.56.20:5000/order-service
   newName: 192.168.56.20:5000/order-service
-  newTag: 904b70d
+  newTag: d8f6dc4
 - name: 192.168.56.20:5000/shipping-service
   newName: 192.168.56.20:5000/shipping-service
-  newTag: 904b70d
+  newTag: d8f6dc4
 - name: 192.168.56.20:5000/stock-service
   newName: 192.168.56.20:5000/stock-service
-  newTag: 904b70d
+  newTag: d8f6dc4
