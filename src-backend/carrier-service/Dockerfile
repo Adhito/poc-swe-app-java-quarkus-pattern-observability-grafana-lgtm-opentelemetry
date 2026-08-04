@@ -1,13 +1,13 @@
 # Stage 1 — compile a static binary. Tags pinned exactly per D7.
 FROM golang:1.26.5-alpine3.24 AS build
 WORKDIR /src
-# go.sum isn't committed (no Go toolchain on the authoring machine), so deps
-# are resolved here; direct versions are pinned in go.mod. `go vet` runs as a
-# build gate since we can't compile-check before this point.
-COPY go.mod ./
+# Deps first, in their own layer — this only re-runs when go.mod/go.sum change,
+# not on every source edit. go.sum is committed, so this verifies hashes rather
+# than resolving versions at build time (D7 reproducibility).
+COPY go.mod go.sum ./
+RUN go mod download
 COPY *.go ./
-RUN go mod tidy \
- && go vet ./... \
+RUN go vet ./... \
  && CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/carrier-service .
 
 # Stage 2 — tiny runtime. alpine rather than scratch/distroless so there's a
