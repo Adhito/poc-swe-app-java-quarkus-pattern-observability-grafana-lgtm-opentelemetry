@@ -36,7 +36,7 @@ src-backend/         order-service, stock-service, notification-service (Quarkus
 src-frontend/        browser SPA (OTel JS), built into the frontend image
 deploy/
   base/             environment-agnostic manifests (observability, platform, apps)
-  overlays/local    Vagrant-cluster overlay: MetalLB pool, nip.io hostnames, image tags
+  overlays/local    Vagrant-cluster overlay: nip.io hostnames, image tags
   overlays/eks*     AWS EKS overlays (Stage B, placeholder)
   argocd/           app-of-apps: local-root.yaml is the ONE manifest applied by hand
 src-infra/
@@ -54,7 +54,7 @@ Makefile            build-push (Jib → registry, tag = git SHA) and deploy (Git
 |---|---|
 | Dev VM (build host + registry) | `192.168.1.10` / `192.168.56.20` |
 | Cluster (Vagrant, kubeadm, CRI-O, Calico) | control `192.168.56.10`, workers `.11` / `.12` |
-| MetalLB pool | `192.168.56.240–250` |
+| MetalLB pool | `192.168.56.240–250`: owned by the Platform (cluster) repo, not installed here |
 | Grafana / API / OTLP ingress | `*.192.168.56.240.nip.io` |
 | ArgoCD | NodePort `30002` on the control node |
 
@@ -62,7 +62,7 @@ Makefile            build-push (Jib → registry, tag = git SHA) and deploy (Git
 
 1. **Registry** on the Dev VM — see `src-infra/devvm-registry/README.md`
 2. **Runtime trust** on the nodes — `ansible-playbook -i inventory.ini src-infra/ansible/registry-trust.yaml`
-3. **ArgoCD** — `kubectl apply -f deploy/argocd/local-root.yaml` (the only imperative step; everything else reconciles from Git: MetalLB → ingress-nginx → observability + platform + apps)
+3. **ArgoCD** — `kubectl apply -f deploy/argocd/local-root.yaml` (the only imperative step; everything else reconciles from Git: observability + platform + apps). MetalLB and the ingress-nginx controller (`192.168.56.240`) come from the Platform repo's `vagrant up`, so they must already be running; this repo only creates `Ingress` objects (`ingressClassName: nginx`)
 
 ## Daily loop
 

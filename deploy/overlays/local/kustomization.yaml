@@ -1,13 +1,17 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-# MetalLB CRs live here (not in base) — MetalLB only exists in the local
-# environment; EKS gets LoadBalancers from AWS (D3)
+# MetalLB (and its IPAddressPool) and the ingress-nginx controller are NOT
+# installed from this repo any more: since 2026-09-23 they are cluster
+# infrastructure owned by the Platform repo
+# (poc-platform-engineering-iac-vagrant-ansible-k8s-cluster-kubeadm-calico,
+# addon_metallb / addon_ingress_nginx). Its pool is 192.168.56.240-.250 and the
+# controller is pinned to .240, so the nip.io hostnames below are unchanged.
+# Do NOT re-add MetalLB CRs here: two MetalLB installs fight over host ports,
+# and an overlapping IPAddressPool is rejected by MetalLB's webhook.
 resources:
 - ../../base/observability
 - ../../base/platform
 - ../../base/apps
-- metallb-ipaddresspool.yaml
-- metallb-l2advertisement.yaml
 
 # hostnames are the only thing overlays change on ingresses (PRD section 8)
 patches:
